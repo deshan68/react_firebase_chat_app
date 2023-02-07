@@ -5,6 +5,7 @@ import Home from "./components/Home";
 import LogIn from "./components/LogIn";
 import MemberListItem from "./components/MemberListItem";
 import { Route, Routes, NavLink, useLocation } from "react-router-dom";
+import Homes from "./components/Homes";
 
 function App() {
   return (
@@ -12,7 +13,8 @@ function App() {
       <div className="  bg-slate-900  flex h-5/6 w-screen m-5">
         <Routes>
           <Route path="/" element={<LogIn />} />
-          <Route path="/home" element={<Home />} />
+          {/* <Route path="/home" element={<Home />} /> */}
+          <Route path="/home" element={<Homes />} />
         </Routes>
       </div>
     </main>
