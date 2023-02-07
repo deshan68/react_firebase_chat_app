@@ -8,6 +8,7 @@ import { auth, db, googleProvider } from "../firbase/config";
 export default function LogIn() {
   const navigate = useNavigate();
   const cookies = new Cookies();
+
   const logInHandler = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
@@ -22,7 +23,6 @@ export default function LogIn() {
   };
 
   const creatUserCollection = async (uid) => {
-    // const userCollection = collection(db, "user");
     const userCollection = doc(db, "users", uid);
     try {
       await setDoc(userCollection, {
@@ -36,6 +36,7 @@ export default function LogIn() {
       console.log(err);
     }
   };
+
   return (
     <div className="flex justify-center items-center w-full">
       <Link>

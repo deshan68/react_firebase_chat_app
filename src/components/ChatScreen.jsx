@@ -51,7 +51,7 @@ export default function ChatScreen() {
     // 👇️ scroll to bottom every time messages change
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [allMsg]);
-
+  console.log(location.state.isLoading);
   return (
     <div className="w-3/4 relative scrollbar-thumb-red-50 scrollbar-track-gray-900 scrollbar-thin scrollbar-corner-rose-900  ">
       {location.state == null ? (

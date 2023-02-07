@@ -1,46 +1,121 @@
+import { async } from "@firebase/util";
 import { signOut } from "firebase/auth";
-import React, { useState } from "react";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  setDoc,
+  where,
+} from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Cookies from "universal-cookie/cjs/Cookies";
 import face from "../assets/face.jpg";
-import { auth } from "../firbase/config";
+import { auth, db } from "../firbase/config";
 import ChatScreen from "./ChatScreen";
 import LogIn from "./LogIn";
 
 export default function MemberListItem() {
   const [clickedId, setClickedId] = useState("");
   const [isActive, setIsActive] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const cookies = new Cookies();
   const authInfo = cookies.get("auth");
-  const members = [
-    {
-      id: 1,
-      name: "Amal Perara",
-      imgUrl:
-        "https://images.unsplash.com/photo-1675441420404-855140358e38?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxlZGl0b3JpYWwtZmVlZHwyfHx8ZW58MHx8fHw%3D&auto=format&fit=crop&w=500&q=60",
-    },
-    {
-      id: 2,
-      name: "Dilan Lakmal",
-      imgUrl:
-        "https://images.unsplash.com/photo-1675685828034-be58f6f986c8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxlZGl0b3JpYWwtZmVlZHwxNHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=60",
-    },
-  ];
-  const memberHandler = (id, name, imgUrl) => {
-    setClickedId(id);
+  const [memberList, setMemberList] = useState([]);
+  // const [gruopList, setGruopList] = useState([]);
+  const memberRefQuery = query(
+    collection(db, "users"),
+    where("userId", "!=", authInfo?.id)
+  );
+
+  const memberHandler = (friendId, name, imgUrl) => {
+    setIsLoading(true);
+    navigate("/home", {
+      state: { isLoading: isLoading, name: name, id: friendId, imgUrl: imgUrl },
+    });
+    setClickedId(friendId);
     setIsActive(!isActive);
-    navigate("/home", { state: { name: name, id: id, imgUrl: imgUrl } });
+    getGroups(friendId, name, imgUrl);
   };
   const logOutHandler = async () => {
     try {
       await signOut(auth);
       cookies.remove("auth");
-      navigate("/", (Option = { replace: true }));
+      navigate("/");
     } catch (err) {
       console.log(err);
     }
   };
+  const getMembers = async () => {
+    try {
+      const data = await getDocs(memberRefQuery);
+      const filterData = data.docs.map((doc) => ({
+        ...doc.data(),
+        id: doc.id,
+      }));
+      setMemberList(filterData);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  useEffect(() => {
+    getMembers();
+  }, []);
+
+  const getGroups = async (friendId, name, imgUrl) => {
+    const groupCollectionRef = collection(db, "groups");
+    try {
+      const data = await getDocs(groupCollectionRef);
+      const filterData = data.docs.map((doc) => ({
+        ...doc.data(),
+        id: doc.id,
+      }));
+      createGroupHandler(friendId, name, imgUrl, filterData);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const createGroupHandler = (friendId, name, imgUrl, gruopList) => {
+    console.log(gruopList);
+    const filterData = gruopList.filter(
+      (item) =>
+        (item.members[0] == friendId && item.members[1] == authInfo.id) ||
+        (item.members[0] == authInfo.id && item.members[1] == friendId)
+    );
+    console.log(filterData.length);
+    setIsLoading(false);
+    navigate("/home", {
+      state: { isLoading: isLoading, name: name, id: friendId, imgUrl: imgUrl },
+    });
+    if (filterData.length == 0) createGroup(friendId, name, imgUrl);
+  };
+
+  const createGroup = async (friendId, name, imgUrl) => {
+    console.log("creating Group");
+    const groupCollectionRef = doc(db, "groups", friendId + authInfo?.id);
+    try {
+      await setDoc(groupCollectionRef, {
+        id: friendId + authInfo?.id,
+        members: [friendId, authInfo?.id],
+      });
+      navigate("/home", {
+        state: {
+          isLoading: isLoading,
+          name: name,
+          id: friendId,
+          imgUrl: imgUrl,
+        },
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   return (
     <div className="w-1/4  overflow-auto border-solid border-r border-b-sky-900 scrollbar-thumb-red-50 scrollbar-track-gray-900 scrollbar-thin scrollbar-corner-rose-900 ">
       <header className="pl-2 pr-2  bg-slate-800 h-1-10 sticky top-0 flex items-center text-white justify-between">
@@ -60,9 +135,9 @@ export default function MemberListItem() {
         </button>
       </header>
       <section>
-        {members.map((item) => (
+        {memberList.map((item) => (
           <div
-            onClick={() => memberHandler(item.id, item.name, item.imgUrl)}
+            onClick={() => memberHandler(item.id, item.userName, item.imgUrl)}
             key={item.id}
             className={
               isActive && clickedId === item.id
@@ -77,7 +152,7 @@ export default function MemberListItem() {
                 alt=""
               />
             </div>
-            <div className=" text-sm">{item.name}</div>
+            <div className=" text-sm">{item.userName}</div>
           </div>
         ))}
       </section>
