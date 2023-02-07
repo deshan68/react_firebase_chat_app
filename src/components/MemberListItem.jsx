@@ -6,11 +6,12 @@ import {
   doc,
   getDoc,
   getDocs,
+  orderBy,
   query,
   setDoc,
   where,
 } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Cookies from "universal-cookie/cjs/Cookies";
 import face from "../assets/face.jpg";
@@ -21,7 +22,10 @@ import LogIn from "./LogIn";
 export default function MemberListItem() {
   const [clickedId, setClickedId] = useState("");
   const [isActive, setIsActive] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const bottomRef = useRef(null);
+  const [allMsg, setAllMsg] = useState([]);
+
   const navigate = useNavigate();
   const cookies = new Cookies();
   const authInfo = cookies.get("auth");
@@ -33,9 +37,8 @@ export default function MemberListItem() {
   );
 
   const memberHandler = (friendId, name, imgUrl) => {
-    setIsLoading(true);
     navigate("/home", {
-      state: { isLoading: isLoading, name: name, id: friendId, imgUrl: imgUrl },
+      state: { isLoading: true, name: name, id: friendId, imgUrl: imgUrl },
     });
     setClickedId(friendId);
     setIsActive(!isActive);
@@ -58,6 +61,9 @@ export default function MemberListItem() {
         id: doc.id,
       }));
       setMemberList(filterData);
+      getMessages();
+
+      console.log(isLoading);
     } catch (err) {
       console.log(err);
     }
@@ -88,11 +94,21 @@ export default function MemberListItem() {
         (item.members[0] == authInfo.id && item.members[1] == friendId)
     );
     console.log(filterData.length);
-    setIsLoading(false);
-    navigate("/home", {
-      state: { isLoading: isLoading, name: name, id: friendId, imgUrl: imgUrl },
-    });
-    if (filterData.length == 0) createGroup(friendId, name, imgUrl);
+    if (filterData.length == 0) {
+      createGroup(friendId, name, imgUrl);
+    } else {
+      // navigate("/home", {
+      //   state: {
+      //     isLoading: false,
+      //     name: name,
+      //     id: friendId,
+      //     imgUrl: imgUrl,
+      //     groupId: filterData[0].id,
+      //     allMsg: allMsg,
+      //   },
+      // });
+      getMessages(filterData[0].id, friendId, name, imgUrl);
+    }
   };
 
   const createGroup = async (friendId, name, imgUrl) => {
@@ -103,12 +119,42 @@ export default function MemberListItem() {
         id: friendId + authInfo?.id,
         members: [friendId, authInfo?.id],
       });
+      // navigate("/home", {
+      //   state: {
+      //     isLoading: false,
+      //     name: name,
+      //     id: friendId,
+      //     imgUrl: imgUrl,
+      //     groupId: friendId + authInfo?.id,
+      //   },
+      // });
+      getMessages(friendId + authInfo?.id, friendId, name, imgUrl);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const getMessages = async (groupId, friendId, name, imgUrl) => {
+    const messageRef = collection(db, "messageRoom/" + groupId + "/messages");
+    const q = query(messageRef, orderBy("fullDateTime"));
+
+    try {
+      const data = await getDocs(q);
+      const filterDate = data.docs.map((doc) => ({
+        ...doc.data(),
+        id: doc.id,
+      }));
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      console.log(filterDate);
+      setAllMsg(filterDate);
       navigate("/home", {
         state: {
-          isLoading: isLoading,
+          isLoading: false,
           name: name,
           id: friendId,
           imgUrl: imgUrl,
+          groupId: friendId + authInfo?.id,
+          allMsg: filterDate,
         },
       });
     } catch (err) {
