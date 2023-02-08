@@ -19,6 +19,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Cookies from "universal-cookie/cjs/Cookies";
 import { auth, db } from "../firbase/config";
 import { useNavigate } from "react-router-dom";
+import { Spinner } from "react-activity";
 
 export default function Homes() {
   const cookies = new Cookies();
@@ -66,6 +67,7 @@ export default function Homes() {
   };
 
   const memberHandler = (friendId, name, imgUrl) => {
+    setIsLoading(true);
     setFriendName(friendId);
     setAllMsg([]);
     const data = { id: friendId, name: name, imgUrl: imgUrl };
@@ -127,9 +129,10 @@ export default function Homes() {
         msgs.push(doc.data());
       });
       setAllMsg(msgs);
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      // bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      setIsLoading(false);
     });
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    // bottomRef.current?.scrollIntoView({ behavior: "smooth" });
 
     // try {
     //   const data = await getDocs(q);
