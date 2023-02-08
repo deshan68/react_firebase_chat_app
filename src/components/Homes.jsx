@@ -19,7 +19,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Cookies from "universal-cookie/cjs/Cookies";
 import { auth, db } from "../firbase/config";
 import { useNavigate } from "react-router-dom";
-import { Spinner } from "react-activity";
+import { Digital, Spinner } from "react-activity";
 
 export default function Homes() {
   const cookies = new Cookies();
@@ -195,22 +195,34 @@ export default function Homes() {
           </button>
         </header>
         <section>
-          {memberList.map((item) => (
-            <div
-              onClick={() => memberHandler(item.id, item.userName, item.imgUrl)}
-              key={item.id}
-              className="  border-solid border-b-1 border-b-sky-900  h-16 text-white flex items-center cursor-pointer "
-            >
-              <div className="w-16 ">
-                <img
-                  src={item.imgUrl}
-                  className="h-10 w-10 rounded-full object-cover ml-2"
-                  alt=""
-                />
+          <>
+            {memberList.length != 0 ? (
+              <>
+                {memberList.map((item) => (
+                  <div
+                    onClick={() =>
+                      memberHandler(item.id, item.userName, item.imgUrl)
+                    }
+                    key={item.id}
+                    className="border-solid border-b-1 border-b-sky-900  h-16 text-white flex items-center cursor-pointer "
+                  >
+                    <div className="w-16 ">
+                      <img
+                        src={item.imgUrl}
+                        className="h-10 w-10 rounded-full object-cover ml-2"
+                        alt=""
+                      />
+                    </div>
+                    <div className=" text-sm">{item.userName}</div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div className="flex justify-center items-center w-full h-full mt-3">
+                <Digital color="white" size={20} />
               </div>
-              <div className=" text-sm">{item.userName}</div>
-            </div>
-          ))}
+            )}
+          </>
         </section>
       </div>
 
